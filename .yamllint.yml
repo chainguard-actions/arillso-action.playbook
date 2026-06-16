@@ -1,0 +1,25 @@
+---
+extends: default
+rules:
+    line-length:
+        max: 160
+        level: warning
+    indentation:
+        spaces: 4
+        indent-sequences: true
+    truthy:
+        allowed-values: ['true', 'false']
+        check-keys: false
+    document-start:
+        present: true
+    octal-values:
+        forbid-implicit-octal: true
+        forbid-explicit-octal: true
+ignore: |
+    .ansible/
+    .venv/
+    venv/
+    .tox/
+    __pycache__/
+    tests/
+    *.tar.gz

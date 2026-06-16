@@ -1,0 +1,66 @@
+name: Test execution options inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create inventory file
+        run: |
+          cat > /tmp/inventory.ini << 'EOF'
+          [local]
+          localhost ansible_connection=local
+          EOF
+
+      - name: Create playbook file
+        run: |
+          cat > /tmp/playbook.yml << 'EOF'
+          ---
+          - name: Test playbook
+            hosts: local
+            gather_facts: false
+            tasks:
+              - name: Echo hello
+                ansible.builtin.debug:
+                  msg: "Hello {{ greeting }}"
+                tags:
+                  - hello
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          inventory: /tmp/inventory.ini
+          playbook: /tmp/playbook.yml
+          check: "true"
+          diff: "true"
+          dry_run: "true"
+          flush_cache: "true"
+          force_handlers: "true"
+          forks: "5"
+          extra_vars: "greeting=world"
+          limit: "local"
+          skip_tags: "never"
+          start_at_task: "Echo hello"
+          tags: "hello"
+          module_path: "/tmp"
+          output_file: "/tmp/ansible-output.txt"
+          verbose: "1"
+          list_hosts: "false"
+          list_tags: "false"
+          list_tasks: "false"
+
+      - name: Assert status output
+        env:
+          STATUS: ${{ steps.action.outputs.status }}
+          EXIT_CODE: ${{ steps.action.outputs.exit_code }}
+        run: |
+          echo "status: $STATUS"
+          echo "exit_code: $EXIT_CODE"
+          if [ "$STATUS" != "success" ]; then
+            echo "FAIL: expected status 'success', got '$STATUS'"
+            exit 1
+          fi
+          echo "PASS"

@@ -1,0 +1,57 @@
+name: Test authentication and privilege escalation inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create inventory file
+        run: |
+          cat > /tmp/inventory.yml << 'EOF'
+          all:
+            hosts:
+              localhost:
+                ansible_connection: local
+          EOF
+
+      - name: Create playbook file
+        run: |
+          cat > /tmp/playbook.yml << 'EOF'
+          ---
+          - name: Test auth playbook
+            hosts: localhost
+            gather_facts: false
+            tasks:
+              - name: Hello task
+                debug:
+                  msg: "Hello from Ansible"
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          inventory: /tmp/inventory.yml
+          playbook: /tmp/playbook.yml
+          syntax_check: "true"
+          vault_id: "default"
+          vault_password: "test_vault_password"
+          private_key: ""
+          private_key_passphrase: ""
+          additional_private_keys: ""
+          known_hosts: ""
+          become: "false"
+          become_method: "sudo"
+          become_user: "root"
+
+      - name: Assert status output
+        env:
+          STATUS: ${{ steps.action.outputs.status }}
+        run: |
+          echo "status: $STATUS"
+          if [ "$STATUS" != "success" ] && [ "$STATUS" != "failed" ]; then
+            echo "FAIL: expected status to be 'success' or 'failed', got '$STATUS'"
+            exit 1
+          fi
+          echo "PASS"

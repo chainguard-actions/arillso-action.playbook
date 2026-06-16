@@ -1,0 +1,74 @@
+name: Test galaxy configuration inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create inventory file
+        run: |
+          cat > /tmp/inventory.yml << 'EOF'
+          all:
+            hosts:
+              localhost:
+                ansible_connection: local
+          EOF
+
+      - name: Create playbook file
+        run: |
+          cat > /tmp/playbook.yml << 'EOF'
+          ---
+          - name: Test galaxy playbook
+            hosts: localhost
+            gather_facts: false
+            tasks:
+              - name: Hello task
+                debug:
+                  msg: "Hello from Ansible"
+          EOF
+
+      - name: Create galaxy requirements file
+        run: |
+          cat > /tmp/requirements.yml << 'EOF'
+          ---
+          collections: []
+          roles: []
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          inventory: /tmp/inventory.yml
+          playbook: /tmp/playbook.yml
+          syntax_check: "true"
+          galaxy_file: ""
+          galaxy_force: "false"
+          galaxy_api_key: ""
+          galaxy_api_server_url: ""
+          galaxy_collections_path: "/tmp/galaxy_collections"
+          galaxy_disable_gpg_verify: "false"
+          galaxy_force_with_deps: "false"
+          galaxy_ignore_certs: "false"
+          galaxy_ignore_signature_status_codes: ""
+          galaxy_keyring: ""
+          galaxy_offline: "false"
+          galaxy_pre: "false"
+          galaxy_required_valid_signature_count: ""
+          galaxy_requirements_file: ""
+          galaxy_signature: ""
+          galaxy_timeout: "60"
+          galaxy_upgrade: "false"
+          galaxy_no_deps: "false"
+
+      - name: Assert status output
+        env:
+          STATUS: ${{ steps.action.outputs.status }}
+        run: |
+          echo "status: $STATUS"
+          if [ "$STATUS" != "success" ] && [ "$STATUS" != "failed" ]; then
+            echo "FAIL: expected status to be 'success' or 'failed', got '$STATUS'"
+            exit 1
+          fi
+          echo "PASS"

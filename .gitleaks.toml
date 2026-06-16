@@ -1,0 +1,13 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+    description = "Allowlisted files and commits"
+    paths = [
+    '''megalinter-reports''',
+    '''(.*?)gitleaks\.toml$''',
+    '''(?i)(.*?)(png|jpeg|jpg|gif|doc|docx|pdf|bin|xls|xlsx|pyc|zip)$''']
+    commits = [
+    '''318d67f8b917c72ec5a58616dbf1f16fb6d29503''']
