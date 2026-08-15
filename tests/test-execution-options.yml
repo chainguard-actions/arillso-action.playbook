@@ -1,66 +1,55 @@
-name: Test execution options inputs
+name: Test execution options
 on:
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - name: Create inventory file
+      - name: Set up git origin reachable inside Docker container
         run: |
-          cat > /tmp/inventory.ini << 'EOF'
-          [local]
-          localhost ansible_connection=local
-          EOF
-
-      - name: Create playbook file
-        run: |
-          cat > /tmp/playbook.yml << 'EOF'
-          ---
-          - name: Test playbook
-            hosts: local
-            gather_facts: false
-            tasks:
-              - name: Echo hello
-                ansible.builtin.debug:
-                  msg: "Hello {{ greeting }}"
-                tags:
-                  - hello
-          EOF
+          git config user.email "test@example.com"
+          git config user.name "Test User"
+          rm -rf "$GITHUB_WORKSPACE/.git-remote"
+          git init --bare "$GITHUB_WORKSPACE/.git-remote"
+          git push "$GITHUB_WORKSPACE/.git-remote" HEAD:refs/heads/act-harness
+          git remote set-url origin "$GITHUB_WORKSPACE/.git-remote" 2>/dev/null || \
+            git remote add origin "$GITHUB_WORKSPACE/.git-remote"
 
       - id: action
         uses: .
         with:
-          inventory: /tmp/inventory.ini
-          playbook: /tmp/playbook.yml
+          inventory: "${{ github.workspace }}/tests/fixtures/inventory/hosts.yml"
+          playbook: "${{ github.workspace }}/tests/fixtures/playbooks/local_tasks.yml"
           check: "true"
           diff: "true"
-          dry_run: "true"
           flush_cache: "true"
           force_handlers: "true"
-          forks: "5"
-          extra_vars: "greeting=world"
-          limit: "local"
-          skip_tags: "never"
-          start_at_task: "Echo hello"
-          tags: "hello"
-          module_path: "/tmp"
-          output_file: "/tmp/ansible-output.txt"
-          verbose: "1"
-          list_hosts: "false"
-          list_tags: "false"
-          list_tasks: "false"
+          forks: "2"
+          limit: "localhost"
+          skip_tags: "skiptag"
+          start_at_task: "Print a message"
 
-      - name: Assert status output
+      - name: Assert status is success
         env:
-          STATUS: ${{ steps.action.outputs.status }}
-          EXIT_CODE: ${{ steps.action.outputs.exit_code }}
+          ACTUAL: ${{ steps.action.outputs.status }}
         run: |
-          echo "status: $STATUS"
-          echo "exit_code: $EXIT_CODE"
-          if [ "$STATUS" != "success" ]; then
-            echo "FAIL: expected status 'success', got '$STATUS'"
+          echo "actual status: $ACTUAL"
+          if [ "$ACTUAL" != "success" ]; then
+            echo "FAIL: expected status 'success' but got '$ACTUAL'"
+            exit 1
+          fi
+          echo "PASS"
+
+      - name: Assert exit code is 0
+        env:
+          ACTUAL: ${{ steps.action.outputs.exit_code }}
+        run: |
+          echo "actual exit_code: $ACTUAL"
+          if [ "$ACTUAL" != "0" ]; then
+            echo "FAIL: expected exit_code '0' but got '$ACTUAL'"
             exit 1
           fi
           echo "PASS"

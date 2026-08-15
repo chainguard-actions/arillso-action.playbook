@@ -1,0 +1,14 @@
+---
+- name: Tagged Playbook
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Task with tag
+      ansible.builtin.debug:
+        msg: "Running tagged task"
+      tags:
+        - mytag
+
+    - name: Task without tag
+      ansible.builtin.debug:
+        msg: "Running untagged task"

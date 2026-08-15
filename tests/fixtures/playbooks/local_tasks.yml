@@ -1,0 +1,20 @@
+---
+- name: Local Tasks Playbook
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Print a message
+      ansible.builtin.debug:
+        msg: "Running local task"
+
+    - name: Task with skip tag
+      ansible.builtin.debug:
+        msg: "This task has a skip tag"
+      tags:
+        - skiptag
+
+    - name: Start task
+      ansible.builtin.debug:
+        msg: "Start at task target"
+      tags:
+        - starttag

@@ -1,4 +1,4 @@
-name: Test galaxy options
+name: Test private key options
 on:
   workflow_dispatch:
 
@@ -18,29 +18,28 @@ jobs:
           git remote set-url origin "$GITHUB_WORKSPACE/.git-remote" 2>/dev/null || \
             git remote add origin "$GITHUB_WORKSPACE/.git-remote"
 
+      - name: Generate test SSH keys and export to env
+        run: |
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key -N "testpassphrase" -q
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_key2 -N "" -q
+          {
+            echo "TEST_PRIVATE_KEY<<EOF"
+            cat /tmp/test_key
+            echo "EOF"
+            echo "TEST_PRIVATE_KEY2<<EOF"
+            cat /tmp/test_key2
+            echo "EOF"
+          } >> "$GITHUB_ENV"
+
       - id: action
         uses: .
         with:
           inventory: "${{ github.workspace }}/tests/fixtures/inventory/hosts.yml"
           playbook: "${{ github.workspace }}/tests/fixtures/playbooks/hello.yml"
-          galaxy_file: "${{ github.workspace }}/tests/fixtures/galaxy/requirements.yml"
-          galaxy_force: "false"
-          galaxy_api_key: "fake-api-key"
-          galaxy_api_server_url: "https://galaxy.ansible.com"
-          galaxy_collections_path: "/tmp/galaxy-collections"
-          galaxy_disable_gpg_verify: "true"
-          galaxy_force_with_deps: "false"
-          galaxy_ignore_certs: "true"
-          galaxy_ignore_signature_status_codes: "404"
-          galaxy_keyring: ""
-          galaxy_offline: "false"
-          galaxy_pre: "false"
-          galaxy_required_valid_signature_count: "0"
-          galaxy_requirements_file: "${{ github.workspace }}/tests/fixtures/galaxy/requirements.yml"
-          galaxy_signature: ""
-          galaxy_timeout: "60"
-          galaxy_upgrade: "false"
-          galaxy_no_deps: "true"
+          syntax_check: "true"
+          private_key: "${{ env.TEST_PRIVATE_KEY }}"
+          private_key_passphrase: "testpassphrase"
+          additional_private_keys: "${{ env.TEST_PRIVATE_KEY2 }}"
 
       - name: Assert status is success
         env:

@@ -1,4 +1,4 @@
-name: Test galaxy options
+name: Test playbook execution with extra vars
 on:
   workflow_dispatch:
 
@@ -22,25 +22,8 @@ jobs:
         uses: .
         with:
           inventory: "${{ github.workspace }}/tests/fixtures/inventory/hosts.yml"
-          playbook: "${{ github.workspace }}/tests/fixtures/playbooks/hello.yml"
-          galaxy_file: "${{ github.workspace }}/tests/fixtures/galaxy/requirements.yml"
-          galaxy_force: "false"
-          galaxy_api_key: "fake-api-key"
-          galaxy_api_server_url: "https://galaxy.ansible.com"
-          galaxy_collections_path: "/tmp/galaxy-collections"
-          galaxy_disable_gpg_verify: "true"
-          galaxy_force_with_deps: "false"
-          galaxy_ignore_certs: "true"
-          galaxy_ignore_signature_status_codes: "404"
-          galaxy_keyring: ""
-          galaxy_offline: "false"
-          galaxy_pre: "false"
-          galaxy_required_valid_signature_count: "0"
-          galaxy_requirements_file: "${{ github.workspace }}/tests/fixtures/galaxy/requirements.yml"
-          galaxy_signature: ""
-          galaxy_timeout: "60"
-          galaxy_upgrade: "false"
-          galaxy_no_deps: "true"
+          playbook: "${{ github.workspace }}/tests/fixtures/playbooks/extra_vars.yml"
+          extra_vars: "greeting=hello"
 
       - name: Assert status is success
         env:

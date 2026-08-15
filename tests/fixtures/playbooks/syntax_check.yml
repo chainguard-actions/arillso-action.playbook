@@ -1,0 +1,8 @@
+---
+- name: Syntax Check Playbook
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: A simple task
+      ansible.builtin.debug:
+        msg: "Syntax is valid!"
